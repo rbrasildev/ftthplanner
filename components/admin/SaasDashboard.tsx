@@ -53,8 +53,8 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
     // Filtro de data pontual — quando setado, busca pagamentos daquele dia e
     // desliga o auto-refresh (não faz sentido refresh de datas passadas).
     const [paymentsDate, setPaymentsDate] = useState<string>('');
-    // Aba ativa do card consolidado (Vencimentos / Inadimplentes / Atividade).
-    const [dashTab, setDashTab] = useState<'expiring' | 'overdue' | 'activity'>('expiring');
+    // Aba ativa do card consolidado (Pagamentos / Vencimentos / Inadimplentes / Atividade).
+    const [dashTab, setDashTab] = useState<'payments' | 'expiring' | 'overdue' | 'activity'>('payments');
 
     // Refresh do activity feed a cada 60s.
     useEffect(() => {
@@ -266,100 +266,11 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                 <MiniStatCard label="Infraestrutura" value={(kpis.totalCTOs).toLocaleString('pt-BR')} sub={`${kpis.totalUsers.toLocaleString('pt-BR')} usuários no total`} icon={<Building2 className="w-4 h-4" />} accent="blue" />
             </div>
 
-            {/* Pagamentos recentes — feed em tempo real (30s) ou filtrado por data */}
-            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-emerald-500" />
-                            <h3 className="font-bold text-sm">Pagamentos recentes</h3>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                            {paymentsDate
-                                ? `${recentPayments.length} ${recentPayments.length === 1 ? 'pagamento' : 'pagamentos'} em ${new Date(paymentsDate + 'T00:00:00').toLocaleDateString('pt-BR')} · Total ${fmtBRL(recentPayments.reduce((a, p) => a + p.amount, 0))}`
-                                : 'Últimos 10 · Atualiza a cada 30s'}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="date"
-                            value={paymentsDate}
-                            onChange={e => setPaymentsDate(e.target.value)}
-                            max={new Date().toISOString().slice(0, 10)}
-                            className="bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                            aria-label="Filtrar pagamentos por data"
-                        />
-                        {paymentsDate && (
-                            <button
-                                onClick={() => setPaymentsDate('')}
-                                className="text-[11px] font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
-                                title="Voltar pros últimos pagamentos"
-                            >
-                                Limpar
-                            </button>
-                        )}
-                    </div>
-                </div>
-                {loadingPayments ? (
-                    <div className="p-6 flex items-center justify-center text-slate-400">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                    </div>
-                ) : recentPayments.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400 text-xs">Nenhum pagamento recente</div>
-                ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {recentPayments.map(p => {
-                            const paidAt = new Date(p.paidAt);
-                            const now = new Date();
-                            const isToday = paidAt.toDateString() === now.toDateString();
-                            const timeStr = isToday
-                                ? paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                                : paidAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                            const methodLabel = p.paymentMethod === 'CREDIT_CARD' ? 'Cartão' : p.paymentMethod === 'MANUAL' ? 'Manual' : 'PIX';
-                            const methodColor = p.paymentMethod === 'CREDIT_CARD'
-                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
-                                : p.paymentMethod === 'MANUAL'
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400';
-                            return (
-                                <button
-                                    key={p.id}
-                                    onClick={() => {
-                                        const c = companies.find(c => c.id === p.company.id);
-                                        if (c) onSelectCompany?.(c);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-left"
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.company.name}</span>
-                                            {isToday && (
-                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 shrink-0">HOJE</span>
-                                            )}
-                                        </div>
-                                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
-                                            <span>{p.plan?.name || '—'}</span>
-                                            <span>·</span>
-                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${methodColor}`}>{methodLabel}</span>
-                                            <span>·</span>
-                                            <span>{timeStr}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm font-extrabold text-emerald-600 shrink-0">{fmtBRL(p.amount)}</div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-            {/* Card consolidado — Vencimentos / Inadimplentes / Atividade em abas */}
+            {/* Card consolidado — Pagamentos / Vencimentos / Inadimplentes / Atividade em abas */}
             <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
                 <div className="border-b border-slate-200 dark:border-slate-700/30 flex items-center overflow-x-auto">
                     {([
+                        { id: 'payments', label: 'Pagamentos', icon: <CreditCard className="w-3.5 h-3.5" />, count: recentPayments.length, color: 'text-emerald-500' },
                         { id: 'expiring', label: 'Próximos vencimentos', icon: <Calendar className="w-3.5 h-3.5" />, count: kpis.expiringSoon.length, color: 'text-amber-500' },
                         { id: 'overdue', label: 'Inadimplentes', icon: <DollarSign className="w-3.5 h-3.5" />, count: kpis.overdue.length, color: 'text-rose-500' },
                         { id: 'activity', label: 'Atividade', icon: <Activity className="w-3.5 h-3.5" />, count: activity.length, color: 'text-emerald-500' },
@@ -388,6 +299,27 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                         );
                     })}
                     <div className="flex-1" />
+                    {dashTab === 'payments' && (
+                        <div className="flex items-center gap-2 px-3 shrink-0">
+                            <input
+                                type="date"
+                                value={paymentsDate}
+                                onChange={e => setPaymentsDate(e.target.value)}
+                                max={new Date().toISOString().slice(0, 10)}
+                                className="bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/50 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                aria-label="Filtrar pagamentos por data"
+                            />
+                            {paymentsDate && (
+                                <button
+                                    onClick={() => setPaymentsDate('')}
+                                    className="text-[11px] font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
+                                    title="Voltar pros últimos pagamentos"
+                                >
+                                    Limpar
+                                </button>
+                            )}
+                        </div>
+                    )}
                     {dashTab === 'activity' && (
                         <button
                             onClick={() => onNavigate('audit')}
@@ -414,7 +346,75 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                     )}
                 </div>
 
-                <div className="max-h-[360px] overflow-y-auto">
+                {/* Subtítulo contextual da aba Pagamentos */}
+                {dashTab === 'payments' && (
+                    <div className="px-5 py-2 border-b border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
+                        {paymentsDate
+                            ? `${recentPayments.length} ${recentPayments.length === 1 ? 'pagamento' : 'pagamentos'} em ${new Date(paymentsDate + 'T00:00:00').toLocaleDateString('pt-BR')} · Total ${fmtBRL(recentPayments.reduce((a, p) => a + p.amount, 0))}`
+                            : 'Últimos 10 · Atualiza a cada 30s'}
+                    </div>
+                )}
+
+                <div className="max-h-[420px] overflow-y-auto">
+                    {dashTab === 'payments' && (
+                        loadingPayments ? (
+                            <div className="p-6 flex items-center justify-center text-slate-400">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            </div>
+                        ) : recentPayments.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-xs">
+                                {paymentsDate ? 'Nenhum pagamento nessa data' : 'Nenhum pagamento recente'}
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {recentPayments.map(p => {
+                                    const paidAt = new Date(p.paidAt);
+                                    const now = new Date();
+                                    const isToday = paidAt.toDateString() === now.toDateString();
+                                    const timeStr = isToday
+                                        ? paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                        : paidAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                    const methodLabel = p.paymentMethod === 'CREDIT_CARD' ? 'Cartão' : p.paymentMethod === 'MANUAL' ? 'Manual' : 'PIX';
+                                    const methodColor = p.paymentMethod === 'CREDIT_CARD'
+                                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                                        : p.paymentMethod === 'MANUAL'
+                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                            : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400';
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => {
+                                                const c = companies.find(c => c.id === p.company.id);
+                                                if (c) onSelectCompany?.(c);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-left"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.company.name}</span>
+                                                    {isToday && (
+                                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 shrink-0">HOJE</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                                                    <span>{p.plan?.name || '—'}</span>
+                                                    <span>·</span>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${methodColor}`}>{methodLabel}</span>
+                                                    <span>·</span>
+                                                    <span>{timeStr}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm font-extrabold text-emerald-600 shrink-0">{fmtBRL(p.amount)}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )
+                    )}
+
                     {dashTab === 'expiring' && (
                         kpis.expiringSoon.length === 0 ? (
                             <div className="p-8 text-center text-slate-400 text-xs">Nenhuma assinatura vence em breve</div>
