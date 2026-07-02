@@ -52,8 +52,13 @@ export interface RecentPayment {
     plan: { id: string; name: string } | null;
 }
 
-export const getRecentPayments = async (limit = 20): Promise<RecentPayment[]> => {
-    const response = await api.get('/saas/payments/recent', { params: { limit } });
+export const getRecentPayments = async (
+    opts: { limit?: number; from?: string; to?: string } = {}
+): Promise<RecentPayment[]> => {
+    const params: Record<string, string | number> = { limit: opts.limit ?? 20 };
+    if (opts.from) params.from = opts.from;
+    if (opts.to) params.to = opts.to;
+    const response = await api.get('/saas/payments/recent', { params });
     return response.data;
 };
 

@@ -50,6 +50,11 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
     const [loadingActivity, setLoadingActivity] = useState(true);
     const [recentPayments, setRecentPayments] = useState<saasService.RecentPayment[]>([]);
     const [loadingPayments, setLoadingPayments] = useState(true);
+    // Filtro de data pontual — quando setado, busca pagamentos daquele dia e
+    // desliga o auto-refresh (não faz sentido refresh de datas passadas).
+    const [paymentsDate, setPaymentsDate] = useState<string>('');
+    // Aba ativa do card consolidado (Vencimentos / Inadimplentes / Atividade).
+    const [dashTab, setDashTab] = useState<'expiring' | 'overdue' | 'activity'>('expiring');
 
     // Refresh do activity feed a cada 60s.
     useEffect(() => {
@@ -66,22 +71,29 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
         return () => { alive = false; clearInterval(interval); };
     }, []);
 
-    // Refresh dos últimos pagamentos a cada 30s — mais frequente que
-    // o audit porque é o feed que o admin fica olhando pra saber
-    // quem pagou.
+    // Refresh dos últimos pagamentos: auto a cada 30s SE não houver filtro
+    // de data; com filtro, apenas uma busca (data histórica não muda sozinha).
     useEffect(() => {
         let alive = true;
+        setLoadingPayments(true);
         const load = async () => {
             try {
-                const payments = await saasService.getRecentPayments(10);
+                let opts: { limit?: number; from?: string; to?: string } = { limit: 10 };
+                if (paymentsDate) {
+                    const d = new Date(paymentsDate + 'T00:00:00');
+                    const dEnd = new Date(paymentsDate + 'T23:59:59.999');
+                    opts = { limit: 500, from: d.toISOString(), to: dEnd.toISOString() };
+                }
+                const payments = await saasService.getRecentPayments(opts);
                 if (alive) setRecentPayments(payments || []);
             } catch (e) { /* silent */ }
             finally { if (alive) setLoadingPayments(false); }
         };
         load();
+        if (paymentsDate) return () => { alive = false; };
         const interval = setInterval(load, 30000);
         return () => { alive = false; clearInterval(interval); };
-    }, []);
+    }, [paymentsDate]);
 
     // ── KPIs com comparação MoM ────────────────────────────────────────────
     const kpis = useMemo(() => {
@@ -254,15 +266,38 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                 <MiniStatCard label="Infraestrutura" value={(kpis.totalCTOs).toLocaleString('pt-BR')} sub={`${kpis.totalUsers.toLocaleString('pt-BR')} usuários no total`} icon={<Building2 className="w-4 h-4" />} accent="blue" />
             </div>
 
-            {/* Pagamentos recentes — feed em tempo real (30s) */}
+            {/* Pagamentos recentes — feed em tempo real (30s) ou filtrado por data */}
             <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex justify-between items-center">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div>
                         <div className="flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-emerald-500" />
                             <h3 className="font-bold text-sm">Pagamentos recentes</h3>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Últimos 10 · Atualiza a cada 30s</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                            {paymentsDate
+                                ? `${recentPayments.length} ${recentPayments.length === 1 ? 'pagamento' : 'pagamentos'} em ${new Date(paymentsDate + 'T00:00:00').toLocaleDateString('pt-BR')} · Total ${fmtBRL(recentPayments.reduce((a, p) => a + p.amount, 0))}`
+                                : 'Últimos 10 · Atualiza a cada 30s'}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            value={paymentsDate}
+                            onChange={e => setPaymentsDate(e.target.value)}
+                            max={new Date().toISOString().slice(0, 10)}
+                            className="bg-slate-50 dark:bg-[#22262e] border border-slate-200 dark:border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                            aria-label="Filtrar pagamentos por data"
+                        />
+                        {paymentsDate && (
+                            <button
+                                onClick={() => setPaymentsDate('')}
+                                className="text-[11px] font-bold text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors"
+                                title="Voltar pros últimos pagamentos"
+                            >
+                                Limpar
+                            </button>
+                        )}
                     </div>
                 </div>
                 {loadingPayments ? (
@@ -321,78 +356,119 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                 )}
             </div>
 
-            {/* Linha 3 — Próximos vencimentos + Inadimplentes + Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Próximos vencimentos */}
-                <ListCard
-                    title="Próximos vencimentos"
-                    subtitle="Assinaturas que expiram em 7 dias"
-                    icon={<Calendar className="w-4 h-4 text-amber-500" />}
-                    emptyText="Nenhuma assinatura vence em breve"
-                    items={kpis.expiringSoon.slice(0, 6)}
-                    onSeeAll={kpis.expiringSoon.length > 6 ? () => onNavigate('companies', { quickFilter: 'expiring' }) : undefined}
-                    renderItem={(c) => {
-                        const days = Math.ceil((new Date(c.subscriptionExpiresAt).getTime() - Date.now()) / 86400000);
-                        const urgent = days <= 2;
+            {/* Card consolidado — Vencimentos / Inadimplentes / Atividade em abas */}
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                <div className="border-b border-slate-200 dark:border-slate-700/30 flex items-center overflow-x-auto">
+                    {([
+                        { id: 'expiring', label: 'Próximos vencimentos', icon: <Calendar className="w-3.5 h-3.5" />, count: kpis.expiringSoon.length, color: 'text-amber-500' },
+                        { id: 'overdue', label: 'Inadimplentes', icon: <DollarSign className="w-3.5 h-3.5" />, count: kpis.overdue.length, color: 'text-rose-500' },
+                        { id: 'activity', label: 'Atividade', icon: <Activity className="w-3.5 h-3.5" />, count: activity.length, color: 'text-emerald-500' },
+                    ] as const).map(tab => {
+                        const active = dashTab === tab.id;
                         return (
                             <button
-                                key={c.id}
-                                onClick={() => onSelectCompany?.(c)}
-                                className="w-full flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg text-left transition-colors group"
+                                key={tab.id}
+                                onClick={() => setDashTab(tab.id)}
+                                className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 -mb-px whitespace-nowrap transition-colors ${
+                                    active
+                                        ? 'border-emerald-500 text-slate-900 dark:text-white'
+                                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                }`}
                             >
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate flex-1">{c.name}</span>
-                                <span className={`text-[10px] font-bold ml-2 shrink-0 px-1.5 py-0.5 rounded ${urgent ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
-                                    {days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : `${days} dias`}
-                                </span>
+                                <span className={active ? tab.color : ''}>{tab.icon}</span>
+                                {tab.label}
+                                {tab.count > 0 && (
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                                        active
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                    }`}>{tab.count}</span>
+                                )}
                             </button>
                         );
-                    }}
-                />
-
-                {/* Inadimplentes */}
-                <ListCard
-                    title="Inadimplentes"
-                    subtitle="Empresas com faturas em atraso"
-                    icon={<DollarSign className="w-4 h-4 text-rose-500" />}
-                    emptyText="Sem inadimplência 🎉"
-                    items={kpis.overdue.slice(0, 6)}
-                    onSeeAll={kpis.overdue.length > 6 ? () => onNavigate('companies', { quickFilter: 'overdue' }) : undefined}
-                    renderItem={(c) => (
+                    })}
+                    <div className="flex-1" />
+                    {dashTab === 'activity' && (
                         <button
-                            key={c.id}
-                            onClick={() => onSelectCompany?.(c)}
-                            className="w-full flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg text-left transition-colors"
+                            onClick={() => onNavigate('audit')}
+                            className="text-[11px] text-emerald-600 hover:text-emerald-500 font-bold uppercase tracking-wider px-4 shrink-0"
                         >
-                            <div className="min-w-0 flex-1">
-                                <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{c.name}</div>
-                                <div className="text-[10px] text-slate-400">{c._financial?.overdueCount} {c._financial?.overdueCount === 1 ? 'fatura' : 'faturas'}</div>
-                            </div>
-                            <span className="text-xs font-extrabold text-rose-600 ml-2 shrink-0">{fmtBRL(c._financial?.overdueTotal || 0)}</span>
-                        </button>
-                    )}
-                />
-
-                {/* Activity feed */}
-                <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm flex flex-col overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex justify-between items-center">
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-emerald-500" />
-                                <h3 className="font-bold text-sm">Atividade ao vivo</h3>
-                            </div>
-                            <p className="text-[11px] text-slate-400 mt-0.5">Atualiza a cada 60s</p>
-                        </div>
-                        <button onClick={() => onNavigate('audit')} className="text-[11px] text-emerald-600 hover:text-emerald-500 font-bold uppercase tracking-wider">
                             Ver tudo
                         </button>
-                    </div>
-                    <div className="flex-1 overflow-auto max-h-[280px]">
-                        {loadingActivity ? (
+                    )}
+                    {dashTab === 'expiring' && kpis.expiringSoon.length > 6 && (
+                        <button
+                            onClick={() => onNavigate('companies', { quickFilter: 'expiring' })}
+                            className="text-[11px] text-emerald-600 hover:text-emerald-500 font-bold uppercase tracking-wider px-4 shrink-0"
+                        >
+                            Ver tudo
+                        </button>
+                    )}
+                    {dashTab === 'overdue' && kpis.overdue.length > 6 && (
+                        <button
+                            onClick={() => onNavigate('companies', { quickFilter: 'overdue' })}
+                            className="text-[11px] text-emerald-600 hover:text-emerald-500 font-bold uppercase tracking-wider px-4 shrink-0"
+                        >
+                            Ver tudo
+                        </button>
+                    )}
+                </div>
+
+                <div className="max-h-[360px] overflow-y-auto">
+                    {dashTab === 'expiring' && (
+                        kpis.expiringSoon.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-xs">Nenhuma assinatura vence em breve</div>
+                        ) : (
+                            <div className="p-2">
+                                {kpis.expiringSoon.slice(0, 20).map(c => {
+                                    const days = Math.ceil((new Date(c.subscriptionExpiresAt).getTime() - Date.now()) / 86400000);
+                                    const urgent = days <= 2;
+                                    return (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => onSelectCompany?.(c)}
+                                            className="w-full flex items-center justify-between p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg text-left transition-colors"
+                                        >
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate flex-1">{c.name}</span>
+                                            <span className={`text-[10px] font-bold ml-2 shrink-0 px-1.5 py-0.5 rounded ${urgent ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+                                                {days === 0 ? 'Hoje' : days === 1 ? 'Amanhã' : `${days} dias`}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )
+                    )}
+
+                    {dashTab === 'overdue' && (
+                        kpis.overdue.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-xs">Sem inadimplência 🎉</div>
+                        ) : (
+                            <div className="p-2">
+                                {kpis.overdue.slice(0, 20).map(c => (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => onSelectCompany?.(c)}
+                                        className="w-full flex items-center justify-between p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg text-left transition-colors"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{c.name}</div>
+                                            <div className="text-[10px] text-slate-400">{c._financial?.overdueCount} {c._financial?.overdueCount === 1 ? 'fatura' : 'faturas'}</div>
+                                        </div>
+                                        <span className="text-xs font-extrabold text-rose-600 ml-2 shrink-0">{fmtBRL(c._financial?.overdueTotal || 0)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )
+                    )}
+
+                    {dashTab === 'activity' && (
+                        loadingActivity ? (
                             <div className="p-6 flex items-center justify-center text-slate-400">
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             </div>
                         ) : activity.length === 0 ? (
-                            <div className="p-6 text-center text-slate-400 text-xs">Sem atividade recente</div>
+                            <div className="p-8 text-center text-slate-400 text-xs">Sem atividade recente</div>
                         ) : (
                             <div className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {activity.map((log, idx) => {
@@ -417,8 +493,8 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
                                     );
                                 })}
                             </div>
-                        )}
-                    </div>
+                        )
+                    )}
                 </div>
             </div>
         </div>

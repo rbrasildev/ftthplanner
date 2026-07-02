@@ -926,10 +926,19 @@ export const recalculateCompanyFinancials = async (req: AuthRequest, res: Respon
 // que caçar cadastro por cadastro pra saber quem pagou.
 export const getRecentPayments = async (req: AuthRequest, res: Response) => {
     try {
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 500);
+        const from = req.query.from ? new Date(String(req.query.from)) : null;
+        const to = req.query.to ? new Date(String(req.query.to)) : null;
+
+        // Se um filtro de data é informado, tira o limit padrão pra mostrar tudo
+        // do período (ou usa o limit alto pra proteção). Sem filtro, retorna
+        // os últimos N por paidAt desc.
+        const paidAtFilter: any = { not: null };
+        if (from) paidAtFilter.gte = from;
+        if (to) paidAtFilter.lte = to;
 
         const invoices = await prisma.invoice.findMany({
-            where: { status: 'PAID', paidAt: { not: null } },
+            where: { status: 'PAID', paidAt: paidAtFilter },
             orderBy: { paidAt: 'desc' },
             take: limit,
             select: {
