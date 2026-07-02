@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
-import { Building2, CheckCircle2, Play, AlertTriangle, TrendingUp, TrendingDown, Minus, Activity, Calendar, DollarSign, ChevronRight, Loader2, Plus, Pencil, Trash2, LogIn, LogOut, Lock } from 'lucide-react';
+import { Building2, CheckCircle2, Play, AlertTriangle, TrendingUp, TrendingDown, Minus, Activity, Calendar, DollarSign, ChevronRight, Loader2, Plus, Pencil, Trash2, LogIn, LogOut, Lock, CreditCard } from 'lucide-react';
 import * as saasService from '../../services/saasService';
 import { useTheme } from '../../ThemeContext';
 
@@ -48,6 +48,8 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
     const isDark = theme === 'dark';
     const [activity, setActivity] = useState<any[]>([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
+    const [recentPayments, setRecentPayments] = useState<saasService.RecentPayment[]>([]);
+    const [loadingPayments, setLoadingPayments] = useState(true);
 
     // Refresh do activity feed a cada 60s.
     useEffect(() => {
@@ -61,6 +63,23 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
         };
         load();
         const interval = setInterval(load, 60000);
+        return () => { alive = false; clearInterval(interval); };
+    }, []);
+
+    // Refresh dos últimos pagamentos a cada 30s — mais frequente que
+    // o audit porque é o feed que o admin fica olhando pra saber
+    // quem pagou.
+    useEffect(() => {
+        let alive = true;
+        const load = async () => {
+            try {
+                const payments = await saasService.getRecentPayments(10);
+                if (alive) setRecentPayments(payments || []);
+            } catch (e) { /* silent */ }
+            finally { if (alive) setLoadingPayments(false); }
+        };
+        load();
+        const interval = setInterval(load, 30000);
         return () => { alive = false; clearInterval(interval); };
     }, []);
 
@@ -233,6 +252,73 @@ export const SaasDashboard: React.FC<Props> = ({ companies, onNavigate, onSelect
 
                 <MiniStatCard label="Projetos" value={kpis.totalProjects.toLocaleString('pt-BR')} icon={<Activity className="w-4 h-4" />} accent="emerald" />
                 <MiniStatCard label="Infraestrutura" value={(kpis.totalCTOs).toLocaleString('pt-BR')} sub={`${kpis.totalUsers.toLocaleString('pt-BR')} usuários no total`} icon={<Building2 className="w-4 h-4" />} accent="blue" />
+            </div>
+
+            {/* Pagamentos recentes — feed em tempo real (30s) */}
+            <div className="bg-white dark:bg-[#1a1d23] rounded-2xl border border-slate-200 dark:border-slate-700/30 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700/30 flex justify-between items-center">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-emerald-500" />
+                            <h3 className="font-bold text-sm">Pagamentos recentes</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Últimos 10 · Atualiza a cada 30s</p>
+                    </div>
+                </div>
+                {loadingPayments ? (
+                    <div className="p-6 flex items-center justify-center text-slate-400">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    </div>
+                ) : recentPayments.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 text-xs">Nenhum pagamento recente</div>
+                ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {recentPayments.map(p => {
+                            const paidAt = new Date(p.paidAt);
+                            const now = new Date();
+                            const isToday = paidAt.toDateString() === now.toDateString();
+                            const timeStr = isToday
+                                ? paidAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                : paidAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                            const methodLabel = p.paymentMethod === 'CREDIT_CARD' ? 'Cartão' : p.paymentMethod === 'MANUAL' ? 'Manual' : 'PIX';
+                            const methodColor = p.paymentMethod === 'CREDIT_CARD'
+                                ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
+                                : p.paymentMethod === 'MANUAL'
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400';
+                            return (
+                                <button
+                                    key={p.id}
+                                    onClick={() => {
+                                        const c = companies.find(c => c.id === p.company.id);
+                                        if (c) onSelectCompany?.(c);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors text-left"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.company.name}</span>
+                                            {isToday && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 shrink-0">HOJE</span>
+                                            )}
+                                        </div>
+                                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                                            <span>{p.plan?.name || '—'}</span>
+                                            <span>·</span>
+                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${methodColor}`}>{methodLabel}</span>
+                                            <span>·</span>
+                                            <span>{timeStr}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-sm font-extrabold text-emerald-600 shrink-0">{fmtBRL(p.amount)}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Linha 3 — Próximos vencimentos + Inadimplentes + Activity */}

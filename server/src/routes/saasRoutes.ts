@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
-import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject, getCompanyInvoices, markInvoicePaid, cancelInvoice, generateAdvanceInvoices, recalculateCompanyFinancials } from '../controllers/saasController';
+import { getPlans, createPlan, updatePlan, deletePlan, getCompanies, updateCompanyStatus, getGlobalMapData, deleteCompany, getGlobalUsers, updateGlobalUser, getPublicPlans, getDeletedProjects, restoreProject, permanentlyDeleteProject, getCompanyInvoices, markInvoicePaid, cancelInvoice, generateAdvanceInvoices, recalculateCompanyFinancials, getRecentPayments } from '../controllers/saasController';
 import { getSaaSConfig, updateSaaSConfig, uploadSaaSLogo } from '../controllers/saasConfigController';
 import { getVideos, getPublicVideos, createVideo, updateVideo, deleteVideo } from '../controllers/videoController';
 import { getSmtpConfig, updateSmtpConfig, testSmtp, getEmailTemplates, createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTemplate, runBillingReminders } from '../controllers/emailController';
@@ -38,6 +38,7 @@ router.post('/invoices/:invoiceId/mark-paid', authenticateToken, requireSuperAdm
 router.post('/invoices/:invoiceId/cancel', authenticateToken, requireSuperAdmin, cancelInvoice);
 router.post('/companies/:companyId/generate-advance-invoices', authenticateToken, requireSuperAdmin, generateAdvanceInvoices);
 router.post('/companies/:companyId/recalculate-financials', authenticateToken, requireSuperAdmin, recalculateCompanyFinancials);
+router.get('/payments/recent', authenticateToken, requireSuperAdmin, getRecentPayments);
 
 // Users (Super Admin)
 router.get('/users', authenticateToken, requireSuperAdmin, getGlobalUsers);

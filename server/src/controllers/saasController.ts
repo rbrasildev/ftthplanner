@@ -919,3 +919,36 @@ export const recalculateCompanyFinancials = async (req: AuthRequest, res: Respon
         });
     }
 };
+
+// --- RECENT PAYMENTS ---
+// Lista os últimos pagamentos (invoices PAID) com dados da empresa e plano.
+// Alimenta o feed "Pagamentos recentes" do dashboard admin SaaS — evita ter
+// que caçar cadastro por cadastro pra saber quem pagou.
+export const getRecentPayments = async (req: AuthRequest, res: Response) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+
+        const invoices = await prisma.invoice.findMany({
+            where: { status: 'PAID', paidAt: { not: null } },
+            orderBy: { paidAt: 'desc' },
+            take: limit,
+            select: {
+                id: true,
+                amount: true,
+                paidAt: true,
+                paymentMethod: true,
+                referenceStart: true,
+                referenceEnd: true,
+                company: { select: { id: true, name: true, cnpj: true, phone: true } },
+                plan: { select: { id: true, name: true } }
+            }
+        });
+
+        return res.json(invoices);
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to fetch recent payments',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+};

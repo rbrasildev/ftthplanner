@@ -41,6 +41,22 @@ export const getAuditLogs = async (params: any = {}) => {
     return response.data;
 };
 
+export interface RecentPayment {
+    id: string;
+    amount: number;
+    paidAt: string;
+    paymentMethod: string;
+    referenceStart: string | null;
+    referenceEnd: string | null;
+    company: { id: string; name: string; cnpj: string | null; phone: string | null };
+    plan: { id: string; name: string } | null;
+}
+
+export const getRecentPayments = async (limit = 20): Promise<RecentPayment[]> => {
+    const response = await api.get('/saas/payments/recent', { params: { limit } });
+    return response.data;
+};
+
 /** Envelope paginado: `{ items, total, skip, limit }`. Backend só devolve esse
  *  shape quando `paginated=1` é enviado. */
 export const getAuditLogsPaged = async (params: { limit?: number; skip?: number; entity?: string; action?: string; userId?: string; from?: string; to?: string } = {}) => {
