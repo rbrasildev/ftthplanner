@@ -266,6 +266,15 @@ export const initCronJobs = () => {
                 if (!company.plan || company.plan.price <= 0 || !company.subscriptionExpiresAt) continue;
                 if (company.plan.type === 'TRIAL') continue;
 
+                // Skip if there are OVERDUE invoices open. Cenário típico: cliente
+                // estava suspenso, admin liberou cortesia (status → ACTIVE, expira em
+                // 5-7 dias). Sem esse skip, o cron emite nova fatura PENDING por
+                // cima da OVERDUE — cobrança dupla e confusão pro cliente.
+                const overdueCount = await prisma.invoice.count({
+                    where: { companyId: company.id, status: 'OVERDUE' }
+                });
+                if (overdueCount > 0) continue;
+
                 const periodStart = new Date(company.subscriptionExpiresAt);
                 const periodEnd = new Date(periodStart);
                 periodEnd.setMonth(periodEnd.getMonth() + 1);
