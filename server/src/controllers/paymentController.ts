@@ -506,15 +506,25 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                 const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : null;
                 const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000) : null;
 
-                if (periodStart && periodEnd) {
-                    // ±1 day tolerance for matching against locally pre-emitted PENDING
-                    const lo = new Date(periodStart.getTime() - 86400000);
-                    const hi = new Date(periodStart.getTime() + 86400000);
+                // Guard: prorations e adjustments do Stripe às vezes chegam com
+                // period_start === period_end (invoice zero-length). Não é um
+                // ciclo real de cobrança; ignorar em vez de criar fatura lixo.
+                const isRealPeriod = periodStart && periodEnd && periodEnd.getTime() > periodStart.getTime();
+
+                if (isRealPeriod) {
+                    // ±7 dias — mesma tolerance do payment_succeeded. Stripe Smart
+                    // Retries cobra dias antes/depois do reference_start local
+                    // (visto em campo: gap de 51h vs pre-emit).
+                    const SEVEN_DAYS_MS = 7 * 86400000;
+                    const lo = new Date(periodStart!.getTime() - SEVEN_DAYS_MS);
+                    const hi = new Date(periodStart!.getTime() + SEVEN_DAYS_MS);
                     const local = await prisma.invoice.findFirst({
                         where: {
                             companyId,
+                            status: { in: ['PENDING', 'OVERDUE', 'EXPIRED'] },
                             referenceStart: { gte: lo, lte: hi }
-                        }
+                        },
+                        orderBy: { createdAt: 'asc' }
                     });
 
                     if (local) {
@@ -542,9 +552,9 @@ export const handleStripeWebhook = async (req: Request, res: Response) => {
                                 amount: (invoice.amount_due || 0) / 100,
                                 status: 'OVERDUE',
                                 paymentMethod: 'CREDIT_CARD',
-                                expiresAt: periodEnd,
-                                referenceStart: periodStart,
-                                referenceEnd: periodEnd,
+                                expiresAt: periodEnd!,
+                                referenceStart: periodStart!,
+                                referenceEnd: periodEnd!,
                                 failureMessage,
                                 failedAt
                             }
